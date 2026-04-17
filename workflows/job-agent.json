@@ -1,0 +1,38 @@
+{
+  "name": "Job Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "weeks", "weeksInterval": 1, "triggerAtDay": [1], "triggerAtHour": 8, "triggerAtMinute": 0 }]
+        }
+      },
+      "id": "node-cron-001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "jsonOutput": "={\n  \"postes\": [\"Product Manager\", \"Data Product Manager\"],\n  \"contrats\": [\"CDI\"],\n  \"salaire_min\": 45000,\n  \"teletravail\": \"full\",\n  \"secteurs_ok\": [\"tech\", \"impact\", \"SaaS\"],\n  \"secteurs_nok\": [\"défense\", \"gambling\", \"crypto\"],\n  \"experience_min\": 3,\n  \"experience_max\": 5,\n  \"stack\": [\"n8n\", \"claude code\", \"Notion\", \"Jira\", \"SQL\"],\n  \"keywords\": [\"n8n\", \"claude code\", \"ai agents\", \"LLM\", \"automation\"],\n  \"langues\": [\"fr\", \"en\", \"es\"],\n  \"max_age_days\": 7,\n  \"top_n\": 15,\n  \"geo\": [\"Donostia\", \"San Sebastián\", \"remote\", \"full remote\", \"télétravail\"]\n}"
+      },
+      "id": "node-config-001",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Config", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "job-agent-v1",
+  "id": "job-agent-workflow",
+  "meta": { "templateCredsSetupCompleted": true }
+}
