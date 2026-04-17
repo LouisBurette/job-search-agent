@@ -84,6 +84,127 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [920, 500]
+    },
+    {
+      "parameters": {
+        "url": "https://es.indeed.com/rss?q=product+manager&l=Donostia&sort=date&fromage=7"
+      },
+      "id": "node-rss-indeed-es-001",
+      "name": "Indeed.es RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [700, 700]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nconst items1 = $input.all();\n\nreturn items1\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.source || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || item.json.content || '',\n      date: item.json.pubDate || '',\n      source: 'Indeed.es',\n      localisation: 'Donostia / Remote',\n      salaire: '',\n    }\n  }));"
+      },
+      "id": "node-fn-indeed-es-001",
+      "name": "Normalize Indeed",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 700]
+    },
+    {
+      "parameters": {
+        "url": "https://www.welcometothejungle.com/fr/jobs/rss?refinementList%5Boffices.country_code%5D%5B%5D=ES&refinementList%5Bcontract_type%5D%5B%5D=CDI"
+      },
+      "id": "node-rss-wttj-001",
+      "name": "WTTJ RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [700, 900]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || item.json.content || '',\n      date: item.json.pubDate || '',\n      source: 'Welcome to the Jungle',\n      localisation: item.json.category || 'Espagne',\n      salaire: '',\n    }\n  }));"
+      },
+      "id": "node-fn-wttj-001",
+      "name": "Normalize WTTJ",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 900]
+    },
+    {
+      "parameters": {
+        "url": "https://api.infojobs.net/api/9/offer?q=product+manager&city=donostia-san-sebastian&teleworking=2&contractType=1&maxResults=50",
+        "method": "GET"
+      },
+      "id": "node-http-infojobs-001",
+      "name": "InfoJobs API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [700, 1100]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nconst offers = $input.first().json.items || [];\n\nreturn offers\n  .filter(offer => new Date(offer.updated) >= cutoff)\n  .map(offer => ({\n    json: {\n      titre: offer.title || '',\n      entreprise: offer.author?.name || '',\n      url: offer.link || '',\n      description: offer.requirementMin || offer.description || '',\n      date: offer.updated || '',\n      source: 'InfoJobs',\n      localisation: offer.city?.value || offer.province?.value || '',\n      salaire: offer.salaryDescription || '',\n    }\n  }));"
+      },
+      "id": "node-fn-infojobs-001",
+      "name": "Normalize InfoJobs",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 1100]
+    },
+    {
+      "parameters": {
+        "url": "https://www.tecnoempleo.com/rss/?te=1&pais=Espa%C3%B1a&telework=1"
+      },
+      "id": "node-rss-tecnoempleo-001",
+      "name": "Tecnoempleo RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [700, 1300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'Tecnoempleo',\n      localisation: item.json.category || 'Espagne',\n      salaire: '',\n    }\n  }));"
+      },
+      "id": "node-fn-tecnoempleo-001",
+      "name": "Normalize Tecnoempleo",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 1300]
+    },
+    {
+      "parameters": {
+        "url": "https://www.computrabajo.es/rss/ofertas-de-trabajo-de-product-manager.xml"
+      },
+      "id": "node-rss-computrabajo-001",
+      "name": "Computrabajo RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [700, 1500]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || item.json.source || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'Computrabajo',\n      localisation: item.json.category || 'Espagne',\n      salaire: '',\n    }\n  }));"
+      },
+      "id": "node-fn-computrabajo-001",
+      "name": "Normalize Computrabajo",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 1500]
+    },
+    {
+      "parameters": {
+        "url": "https://www.linkedin.com/jobs/search/?keywords=product+manager&location=Donostia&f_WT=2&f_TPR=r604800&f_JT=F"
+      },
+      "id": "node-rss-linkedin-001",
+      "name": "LinkedIn RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [700, 1700]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => {\n    try { return new Date(item.json.pubDate) >= cutoff; }\n    catch { return true; }\n  })\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'LinkedIn',\n      localisation: 'Donostia / Remote',\n      salaire: '',\n    }\n  }));"
+      },
+      "id": "node-fn-linkedin-001",
+      "name": "Normalize LinkedIn",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 1700]
     }
   ],
   "connections": {
@@ -95,7 +216,13 @@
         [
           { "node": "Remotive RSS", "type": "main", "index": 0 },
           { "node": "WWDR RSS", "type": "main", "index": 0 },
-          { "node": "JTMS API", "type": "main", "index": 0 }
+          { "node": "JTMS API", "type": "main", "index": 0 },
+          { "node": "Indeed.es RSS", "type": "main", "index": 0 },
+          { "node": "WTTJ RSS", "type": "main", "index": 0 },
+          { "node": "InfoJobs API", "type": "main", "index": 0 },
+          { "node": "Tecnoempleo RSS", "type": "main", "index": 0 },
+          { "node": "Computrabajo RSS", "type": "main", "index": 0 },
+          { "node": "LinkedIn RSS", "type": "main", "index": 0 }
         ]
       ]
     },
@@ -107,6 +234,24 @@
     },
     "JTMS API": {
       "main": [[{ "node": "Normalize JTMS", "type": "main", "index": 0 }]]
+    },
+    "Indeed.es RSS": {
+      "main": [[{ "node": "Normalize Indeed", "type": "main", "index": 0 }]]
+    },
+    "WTTJ RSS": {
+      "main": [[{ "node": "Normalize WTTJ", "type": "main", "index": 0 }]]
+    },
+    "InfoJobs API": {
+      "main": [[{ "node": "Normalize InfoJobs", "type": "main", "index": 0 }]]
+    },
+    "Tecnoempleo RSS": {
+      "main": [[{ "node": "Normalize Tecnoempleo", "type": "main", "index": 0 }]]
+    },
+    "Computrabajo RSS": {
+      "main": [[{ "node": "Normalize Computrabajo", "type": "main", "index": 0 }]]
+    },
+    "LinkedIn RSS": {
+      "main": [[{ "node": "Normalize LinkedIn", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
