@@ -300,6 +300,48 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [2700, 900]
+    },
+    {
+      "parameters": {
+        "functionCode": "const offers = $input.all().map(i => i.json);\nconst failedSources = [];\n\nfunction scoreColor(score) {\n  if (score >= 8) return '#22c55e';\n  if (score >= 5) return '#f59e0b';\n  return '#ef4444';\n}\n\nfunction buildCard(offer) {\n  const score = offer.score !== null ? offer.score : '?';\n  const color = offer.score !== null ? scoreColor(offer.score) : '#94a3b8';\n  return `<div style=\"border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:16px;font-family:sans-serif;\"><div style=\"display:flex;justify-content:space-between;align-items:flex-start;\"><div><h3 style=\"margin:0 0 4px;font-size:16px;color:#1e293b;\">${offer.titre}</h3><p style=\"margin:0;color:#64748b;font-size:14px;\">${offer.entreprise} · ${offer.source} · ${offer.localisation}</p>${offer.salaire ? `<p style=\"margin:4px 0 0;color:#64748b;font-size:13px;\">💰 ${offer.salaire}</p>` : ''}</div><div style=\"background:${color};color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;flex-shrink:0;text-align:center;line-height:36px;\">${score}</div></div><p style=\"margin:10px 0 8px;font-size:13px;color:#475569;font-style:italic;\">${offer.raison}</p><a href=\"${offer.url}\" style=\"display:inline-block;background:#3b82f6;color:white;padding:6px 14px;border-radius:4px;font-size:13px;text-decoration:none;\">Voir l'offre →</a></div>`;\n}\n\nconst cards = offers.map(buildCard).join('');\nconst warning = failedSources.length > 0\n  ? `<p style=\"color:#ef4444;font-size:13px;margin-top:24px;\">⚠️ Sources indisponibles cette semaine : ${failedSources.join(', ')}</p>`\n  : '';\n\nconst dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });\nconst html = `<html><body style=\"background:#f8fafc;padding:24px;\"><div style=\"max-width:600px;margin:0 auto;\"><h1 style=\"font-size:20px;color:#1e293b;margin-bottom:4px;\">🎯 Job Digest — ${dateStr}</h1><p style=\"color:#64748b;font-size:14px;margin-bottom:24px;\">${offers.length} offre${offers.length > 1 ? 's' : ''} sélectionnée${offers.length > 1 ? 's' : ''}</p>${cards}${warning}</div></body></html>`;\n\nreturn [{ json: { html, offerCount: offers.length, offers } }];"
+      },
+      "id": "node-fn-build-email-001",
+      "name": "Build Email HTML",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2920, 900]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.offerCount }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "node-if-has-offers-001",
+      "name": "Has Offers?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [3140, 900]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $vars.EMAIL_FROM }}",
+        "toEmail": "={{ $vars.EMAIL_TO }}",
+        "subject": "=🎯 Job Digest — {{ new Date().toLocaleDateString('fr-FR') }} ({{ $json.offerCount }} offres)",
+        "emailType": "html",
+        "message": "={{ $json.html }}"
+      },
+      "id": "node-email-send-001",
+      "name": "Send Digest",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [3360, 900]
     }
   ],
   "connections": {
@@ -395,6 +437,18 @@
     },
     "Parse Score": {
       "main": [[{ "node": "Sort & Top N", "type": "main", "index": 0 }]]
+    },
+    "Sort & Top N": {
+      "main": [[{ "node": "Build Email HTML", "type": "main", "index": 0 }]]
+    },
+    "Build Email HTML": {
+      "main": [[{ "node": "Has Offers?", "type": "main", "index": 0 }]]
+    },
+    "Has Offers?": {
+      "main": [
+        [{ "node": "Send Digest", "type": "main", "index": 0 }],
+        []
+      ]
     }
   },
   "active": false,
