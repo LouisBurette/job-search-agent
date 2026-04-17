@@ -4,14 +4,27 @@
     {
       "parameters": {
         "rule": {
-          "interval": [{ "field": "weeks", "weeksInterval": 1, "triggerAtDay": [1], "triggerAtHour": 8, "triggerAtMinute": 0 }]
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
+            }
+          ]
         }
       },
       "id": "node-cron-001",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -22,7 +35,10 @@
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -32,17 +48,23 @@
       "name": "Remotive RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1,
-      "position": [700, 100]
+      "position": [
+        700,
+        100
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.content || item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'Remotive',\n      localisation: 'Remote',\n      salaire: '',\n    }\n  }));"
+        "jsCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.content || item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'Remotive',\n      localisation: 'Remote',\n      salaire: '',\n    }\n  }));"
       },
       "id": "node-fn-remotive-001",
       "name": "Normalize Remotive",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [920, 100]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        100
+      ]
     },
     {
       "parameters": {
@@ -52,17 +74,23 @@
       "name": "WWDR RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1,
-      "position": [700, 300]
+      "position": [
+        700,
+        300
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => {\n    const titleParts = (item.json.title || '').split(' at ');\n    return {\n      json: {\n        titre: titleParts[0]?.trim() || item.json.title || '',\n        entreprise: titleParts[1]?.trim() || '',\n        url: item.json.link || '',\n        description: item.json.content || item.json.contentSnippet || '',\n        date: item.json.pubDate || '',\n        source: 'We Work Remotely',\n        localisation: 'Remote',\n        salaire: '',\n      }\n    };\n  });"
+        "jsCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => {\n    const titleParts = (item.json.title || '').split(' at ');\n    return {\n      json: {\n        titre: titleParts[0]?.trim() || item.json.title || '',\n        entreprise: titleParts[1]?.trim() || '',\n        url: item.json.link || '',\n        description: item.json.content || item.json.contentSnippet || '',\n        date: item.json.pubDate || '',\n        source: 'We Work Remotely',\n        localisation: 'Remote',\n        salaire: '',\n      }\n    };\n  });"
       },
       "id": "node-fn-wwdr-001",
       "name": "Normalize WWDR",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [920, 300]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        300
+      ]
     },
     {
       "parameters": {
@@ -73,17 +101,23 @@
       "name": "JTMS API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [700, 500]
+      "position": [
+        700,
+        500
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nconst jobs = $input.first().json.jobs || $input.all().map(i => i.json);\n\nreturn jobs\n  .filter(job => new Date(job.published_at || job.pubDate) >= cutoff)\n  .map(job => ({\n    json: {\n      titre: job.title || job.titre || '',\n      entreprise: job.company || job.entreprise || '',\n      url: job.url || job.link || '',\n      description: job.description || job.content || '',\n      date: job.published_at || job.pubDate || '',\n      source: 'Jobs That Make Sense',\n      localisation: job.location || 'Remote',\n      salaire: job.salary || '',\n    }\n  }));"
+        "jsCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nconst jobs = $input.first().json.jobs || $input.all().map(i => i.json);\n\nreturn jobs\n  .filter(job => new Date(job.published_at || job.pubDate) >= cutoff)\n  .map(job => ({\n    json: {\n      titre: job.title || job.titre || '',\n      entreprise: job.company || job.entreprise || '',\n      url: job.url || job.link || '',\n      description: job.description || job.content || '',\n      date: job.published_at || job.pubDate || '',\n      source: 'Jobs That Make Sense',\n      localisation: job.location || 'Remote',\n      salaire: job.salary || '',\n    }\n  }));"
       },
       "id": "node-fn-jtms-001",
       "name": "Normalize JTMS",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [920, 500]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        500
+      ]
     },
     {
       "parameters": {
@@ -93,17 +127,23 @@
       "name": "Indeed.es RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1,
-      "position": [700, 700]
+      "position": [
+        700,
+        700
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nconst items1 = $input.all();\n\nreturn items1\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.source || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || item.json.content || '',\n      date: item.json.pubDate || '',\n      source: 'Indeed.es',\n      localisation: 'Donostia / Remote',\n      salaire: '',\n    }\n  }));"
+        "jsCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nconst items1 = $input.all();\n\nreturn items1\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.source || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || item.json.content || '',\n      date: item.json.pubDate || '',\n      source: 'Indeed.es',\n      localisation: 'Donostia / Remote',\n      salaire: '',\n    }\n  }));"
       },
       "id": "node-fn-indeed-es-001",
       "name": "Normalize Indeed",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [920, 700]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        700
+      ]
     },
     {
       "parameters": {
@@ -113,17 +153,23 @@
       "name": "WTTJ RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1,
-      "position": [700, 900]
+      "position": [
+        700,
+        900
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || item.json.content || '',\n      date: item.json.pubDate || '',\n      source: 'Welcome to the Jungle',\n      localisation: item.json.category || 'Espagne',\n      salaire: '',\n    }\n  }));"
+        "jsCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || item.json.content || '',\n      date: item.json.pubDate || '',\n      source: 'Welcome to the Jungle',\n      localisation: item.json.category || 'Espagne',\n      salaire: '',\n    }\n  }));"
       },
       "id": "node-fn-wttj-001",
       "name": "Normalize WTTJ",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [920, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        900
+      ]
     },
     {
       "parameters": {
@@ -134,17 +180,23 @@
       "name": "InfoJobs API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [700, 1100]
+      "position": [
+        700,
+        1100
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nconst offers = $input.first().json.items || [];\n\nreturn offers\n  .filter(offer => new Date(offer.updated) >= cutoff)\n  .map(offer => ({\n    json: {\n      titre: offer.title || '',\n      entreprise: offer.author?.name || '',\n      url: offer.link || '',\n      description: offer.requirementMin || offer.description || '',\n      date: offer.updated || '',\n      source: 'InfoJobs',\n      localisation: offer.city?.value || offer.province?.value || '',\n      salaire: offer.salaryDescription || '',\n    }\n  }));"
+        "jsCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nconst offers = $input.first().json.items || [];\n\nreturn offers\n  .filter(offer => new Date(offer.updated) >= cutoff)\n  .map(offer => ({\n    json: {\n      titre: offer.title || '',\n      entreprise: offer.author?.name || '',\n      url: offer.link || '',\n      description: offer.requirementMin || offer.description || '',\n      date: offer.updated || '',\n      source: 'InfoJobs',\n      localisation: offer.city?.value || offer.province?.value || '',\n      salaire: offer.salaryDescription || '',\n    }\n  }));"
       },
       "id": "node-fn-infojobs-001",
       "name": "Normalize InfoJobs",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [920, 1100]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        1100
+      ]
     },
     {
       "parameters": {
@@ -154,17 +206,23 @@
       "name": "Tecnoempleo RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1,
-      "position": [700, 1300]
+      "position": [
+        700,
+        1300
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'Tecnoempleo',\n      localisation: item.json.category || 'Espagne',\n      salaire: '',\n    }\n  }));"
+        "jsCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'Tecnoempleo',\n      localisation: item.json.category || 'Espagne',\n      salaire: '',\n    }\n  }));"
       },
       "id": "node-fn-tecnoempleo-001",
       "name": "Normalize Tecnoempleo",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [920, 1300]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        1300
+      ]
     },
     {
       "parameters": {
@@ -174,17 +232,23 @@
       "name": "Computrabajo RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1,
-      "position": [700, 1500]
+      "position": [
+        700,
+        1500
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || item.json.source || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'Computrabajo',\n      localisation: item.json.category || 'Espagne',\n      salaire: '',\n    }\n  }));"
+        "jsCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || item.json.source || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'Computrabajo',\n      localisation: item.json.category || 'Espagne',\n      salaire: '',\n    }\n  }));"
       },
       "id": "node-fn-computrabajo-001",
       "name": "Normalize Computrabajo",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [920, 1500]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        1500
+      ]
     },
     {
       "parameters": {
@@ -194,17 +258,23 @@
       "name": "LinkedIn RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1,
-      "position": [700, 1700]
+      "position": [
+        700,
+        1700
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => {\n    try { return new Date(item.json.pubDate) >= cutoff; }\n    catch { return true; }\n  })\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'LinkedIn',\n      localisation: 'Donostia / Remote',\n      salaire: '',\n    }\n  }));"
+        "jsCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => {\n    try { return new Date(item.json.pubDate) >= cutoff; }\n    catch { return true; }\n  })\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'LinkedIn',\n      localisation: 'Donostia / Remote',\n      salaire: '',\n    }\n  }));"
       },
       "id": "node-fn-linkedin-001",
       "name": "Normalize LinkedIn",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [920, 1700]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        1700
+      ]
     },
     {
       "parameters": {
@@ -214,47 +284,62 @@
       "name": "Merge All Sources",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
-      "position": [1160, 900]
+      "position": [
+        1160,
+        900
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const seen = new Set();\nreturn $input.all().filter(item => {\n  const url = item.json.url;\n  if (!url || seen.has(url)) return false;\n  seen.add(url);\n  return true;\n});"
+        "jsCode": "const seen = new Set();\nreturn $input.all().filter(item => {\n  const url = item.json.url;\n  if (!url || seen.has(url)) return false;\n  seen.add(url);\n  return true;\n});"
       },
       "id": "node-fn-dedup-week-001",
       "name": "Dedup Same Week",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [1380, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        900
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.sentUrls) staticData.sentUrls = [];\n\nconst thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;\nstaticData.sentUrls = staticData.sentUrls.filter(entry => entry.ts > thirtyDaysAgo);\n\nconst sentSet = new Set(staticData.sentUrls.map(e => e.url));\n\nconst newOffers = $input.all().filter(item => !sentSet.has(item.json.url));\n\nreturn newOffers;"
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.sentUrls) staticData.sentUrls = [];\n\nconst thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;\nstaticData.sentUrls = staticData.sentUrls.filter(entry => entry.ts > thirtyDaysAgo);\n\nconst sentSet = new Set(staticData.sentUrls.map(e => e.url));\n\nconst newOffers = $input.all().filter(item => !sentSet.has(item.json.url));\n\nreturn newOffers;"
       },
       "id": "node-fn-dedup-hist-001",
       "name": "Dedup Historical",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [1600, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        900
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\n\nfunction matchesGeo(localisation, geo) {\n  if (!localisation) return true;\n  const loc = localisation.toLowerCase();\n  return geo.some(g => loc.includes(g.toLowerCase()));\n}\n\nfunction matchesPoste(titre, description, postes) {\n  const text = `${titre} ${description}`.toLowerCase();\n  return postes.some(p => text.includes(p.toLowerCase()));\n}\n\nfunction matchesTeletravail(description, localisation) {\n  const text = `${description} ${localisation}`.toLowerCase();\n  return (\n    text.includes('remote') ||\n    text.includes('télétravail') ||\n    text.includes('teletrabajo') ||\n    text.includes('full remote') ||\n    text.includes('100%')\n  );\n}\n\nfunction avoidsSecteur(description, titre, secteurs_nok) {\n  const text = `${titre} ${description}`.toLowerCase();\n  return !secteurs_nok.some(s => text.includes(s.toLowerCase()));\n}\n\nfunction isRecent(dateStr, max_age_days) {\n  try {\n    const date = new Date(dateStr);\n    const cutoff = new Date(Date.now() - max_age_days * 24 * 60 * 60 * 1000);\n    return date >= cutoff;\n  } catch { return true; }\n}\n\nreturn $input.all().filter(item => {\n  const { titre, description, localisation, date } = item.json;\n\n  const geoOk = matchesGeo(localisation, config.geo) || matchesTeletravail(description, localisation);\n  if (!geoOk) return false;\n\n  if (!matchesPoste(titre, description, config.postes)) return false;\n\n  if (!avoidsSecteur(description, titre, config.secteurs_nok)) return false;\n\n  if (!isRecent(date, config.max_age_days)) return false;\n\n  return true;\n});"
+        "jsCode": "const config = $('Config').first().json;\n\nfunction matchesGeo(localisation, geo) {\n  if (!localisation) return true;\n  const loc = localisation.toLowerCase();\n  return geo.some(g => loc.includes(g.toLowerCase()));\n}\n\nfunction matchesPoste(titre, description, postes) {\n  const text = `${titre} ${description}`.toLowerCase();\n  return postes.some(p => text.includes(p.toLowerCase()));\n}\n\nfunction matchesTeletravail(description, localisation) {\n  const text = `${description} ${localisation}`.toLowerCase();\n  return (\n    text.includes('remote') ||\n    text.includes('télétravail') ||\n    text.includes('teletrabajo') ||\n    text.includes('full remote') ||\n    text.includes('100%')\n  );\n}\n\nfunction avoidsSecteur(description, titre, secteurs_nok) {\n  const text = `${titre} ${description}`.toLowerCase();\n  return !secteurs_nok.some(s => text.includes(s.toLowerCase()));\n}\n\nfunction isRecent(dateStr, max_age_days) {\n  try {\n    const date = new Date(dateStr);\n    const cutoff = new Date(Date.now() - max_age_days * 24 * 60 * 60 * 1000);\n    return date >= cutoff;\n  } catch { return true; }\n}\n\nreturn $input.all().filter(item => {\n  const { titre, description, localisation, date } = item.json;\n\n  const geoOk = matchesGeo(localisation, config.geo) || matchesTeletravail(description, localisation);\n  if (!geoOk) return false;\n\n  if (!matchesPoste(titre, description, config.postes)) return false;\n\n  if (!avoidsSecteur(description, titre, config.secteurs_nok)) return false;\n\n  if (!isRecent(date, config.max_age_days)) return false;\n\n  return true;\n});"
       },
       "id": "node-fn-rule-filter-001",
       "name": "Rule Filter",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [1820, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1820,
+        900
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst offer = $input.first().json;\n\nconst prompt = `Tu es un assistant de recherche d'emploi. Évalue la pertinence de cette offre pour ce profil.\n\nPROFIL :\n- Postes recherchés : ${config.postes.join(', ')}\n- Contrats : ${config.contrats.join(', ')}\n- Salaire min : ${config.salaire_min}€\n- Télétravail : ${config.teletravail}\n- Secteurs appréciés : ${config.secteurs_ok.join(', ')}\n- Secteurs à éviter : ${config.secteurs_nok.join(', ')}\n- Expérience : ${config.experience_min}-${config.experience_max} ans\n- Stack / outils : ${config.stack.join(', ')}\n- Keywords d'intérêt : ${config.keywords.join(', ')}\n- Langues : ${config.langues.join(', ')}\n\nOFFRE :\nTitre : ${offer.titre}\nEntreprise : ${offer.entreprise}\nSource : ${offer.source}\nLocalisation : ${offer.localisation}\nSalaire : ${offer.salaire || 'non précisé'}\nDescription : ${(offer.description || '').substring(0, 1500)}\n\nRéponds UNIQUEMENT en JSON valide, sans markdown, sans commentaire :\n{ \"score\": <entier 1-10>, \"raison\": \"<2 phrases max en français>\" }`;\n\nreturn [{ json: { ...offer, prompt } }];"
+        "jsCode": "const config = $('Config').first().json;\nconst offer = $input.first().json;\n\nconst prompt = `Tu es un assistant de recherche d'emploi. Évalue la pertinence de cette offre pour ce profil.\n\nPROFIL :\n- Postes recherchés : ${config.postes.join(', ')}\n- Contrats : ${config.contrats.join(', ')}\n- Salaire min : ${config.salaire_min}€\n- Télétravail : ${config.teletravail}\n- Secteurs appréciés : ${config.secteurs_ok.join(', ')}\n- Secteurs à éviter : ${config.secteurs_nok.join(', ')}\n- Expérience : ${config.experience_min}-${config.experience_max} ans\n- Stack / outils : ${config.stack.join(', ')}\n- Keywords d'intérêt : ${config.keywords.join(', ')}\n- Langues : ${config.langues.join(', ')}\n\nOFFRE :\nTitre : ${offer.titre}\nEntreprise : ${offer.entreprise}\nSource : ${offer.source}\nLocalisation : ${offer.localisation}\nSalaire : ${offer.salaire || 'non précisé'}\nDescription : ${(offer.description || '').substring(0, 1500)}\n\nRéponds UNIQUEMENT en JSON valide, sans markdown, sans commentaire :\n{ \"score\": <entier 1-10>, \"raison\": \"<2 phrases max en français>\" }`;\n\nreturn [{ json: { ...offer, prompt } }];"
       },
       "id": "node-fn-build-prompt-001",
       "name": "Build Prompt",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [2040, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2040,
+        900
+      ]
     },
     {
       "parameters": {
@@ -263,9 +348,18 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-api-key", "value": "={{ $vars.ANTHROPIC_API_KEY }}" },
-            { "name": "anthropic-version", "value": "2023-06-01" },
-            { "name": "content-type", "value": "application/json" }
+            {
+              "name": "x-api-key",
+              "value": "={{ $vars.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -279,37 +373,49 @@
       "name": "Score LLM",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [2260, 900]
+      "position": [
+        2260,
+        900
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const offer = $input.first().json;\nconst rawResponse = $input.first().json.content?.[0]?.text || '{}';\n\nlet score = null;\nlet raison = '';\n\ntry {\n  const parsed = JSON.parse(rawResponse);\n  score = parsed.score || null;\n  raison = parsed.raison || '';\n} catch (e) {\n  score = null;\n  raison = 'Score non disponible';\n}\n\nreturn [{ json: { ...offer, score, raison } }];"
+        "jsCode": "const offer = $input.first().json;\nconst rawResponse = $input.first().json.content?.[0]?.text || '{}';\n\nlet score = null;\nlet raison = '';\n\ntry {\n  const parsed = JSON.parse(rawResponse);\n  score = parsed.score || null;\n  raison = parsed.raison || '';\n} catch (e) {\n  score = null;\n  raison = 'Score non disponible';\n}\n\nreturn [{ json: { ...offer, score, raison } }];"
       },
       "id": "node-fn-parse-score-001",
       "name": "Parse Score",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [2480, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        900
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const config = $('Config').first().json;\nconst offers = $input.all().map(i => i.json);\n\noffers.sort((a, b) => {\n  if (a.score === null) return 1;\n  if (b.score === null) return -1;\n  return b.score - a.score;\n});\n\nreturn offers.slice(0, config.top_n).map(o => ({ json: o }));"
+        "jsCode": "const config = $('Config').first().json;\nconst offers = $input.all().map(i => i.json);\n\noffers.sort((a, b) => {\n  if (a.score === null) return 1;\n  if (b.score === null) return -1;\n  return b.score - a.score;\n});\n\nreturn offers.slice(0, config.top_n).map(o => ({ json: o }));"
       },
       "id": "node-fn-sort-top-n-001",
       "name": "Sort & Top N",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [2700, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        900
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const offers = $input.all().map(i => i.json);\nconst failedSources = [];\n\nfunction scoreColor(score) {\n  if (score >= 8) return '#22c55e';\n  if (score >= 5) return '#f59e0b';\n  return '#ef4444';\n}\n\nfunction buildCard(offer) {\n  const score = offer.score !== null ? offer.score : '?';\n  const color = offer.score !== null ? scoreColor(offer.score) : '#94a3b8';\n  return `<div style=\"border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:16px;font-family:sans-serif;\"><div style=\"display:flex;justify-content:space-between;align-items:flex-start;\"><div><h3 style=\"margin:0 0 4px;font-size:16px;color:#1e293b;\">${offer.titre}</h3><p style=\"margin:0;color:#64748b;font-size:14px;\">${offer.entreprise} · ${offer.source} · ${offer.localisation}</p>${offer.salaire ? `<p style=\"margin:4px 0 0;color:#64748b;font-size:13px;\">💰 ${offer.salaire}</p>` : ''}</div><div style=\"background:${color};color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;flex-shrink:0;text-align:center;line-height:36px;\">${score}</div></div><p style=\"margin:10px 0 8px;font-size:13px;color:#475569;font-style:italic;\">${offer.raison}</p><a href=\"${offer.url}\" style=\"display:inline-block;background:#3b82f6;color:white;padding:6px 14px;border-radius:4px;font-size:13px;text-decoration:none;\">Voir l'offre →</a></div>`;\n}\n\nconst cards = offers.map(buildCard).join('');\nconst warning = failedSources.length > 0\n  ? `<p style=\"color:#ef4444;font-size:13px;margin-top:24px;\">⚠️ Sources indisponibles cette semaine : ${failedSources.join(', ')}</p>`\n  : '';\n\nconst dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });\nconst html = `<html><body style=\"background:#f8fafc;padding:24px;\"><div style=\"max-width:600px;margin:0 auto;\"><h1 style=\"font-size:20px;color:#1e293b;margin-bottom:4px;\">🎯 Job Digest — ${dateStr}</h1><p style=\"color:#64748b;font-size:14px;margin-bottom:24px;\">${offers.length} offre${offers.length > 1 ? 's' : ''} sélectionnée${offers.length > 1 ? 's' : ''}</p>${cards}${warning}</div></body></html>`;\n\nreturn [{ json: { html, offerCount: offers.length, offers } }];"
+        "jsCode": "const offers = $input.all().map(i => i.json);\nconst failedSources = [];\n\nfunction scoreColor(score) {\n  if (score >= 8) return '#22c55e';\n  if (score >= 5) return '#f59e0b';\n  return '#ef4444';\n}\n\nfunction buildCard(offer) {\n  const score = offer.score !== null ? offer.score : '?';\n  const color = offer.score !== null ? scoreColor(offer.score) : '#94a3b8';\n  return `<div style=\"border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:16px;font-family:sans-serif;\"><div style=\"display:flex;justify-content:space-between;align-items:flex-start;\"><div><h3 style=\"margin:0 0 4px;font-size:16px;color:#1e293b;\">${offer.titre}</h3><p style=\"margin:0;color:#64748b;font-size:14px;\">${offer.entreprise} · ${offer.source} · ${offer.localisation}</p>${offer.salaire ? `<p style=\"margin:4px 0 0;color:#64748b;font-size:13px;\">💰 ${offer.salaire}</p>` : ''}</div><div style=\"background:${color};color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;flex-shrink:0;text-align:center;line-height:36px;\">${score}</div></div><p style=\"margin:10px 0 8px;font-size:13px;color:#475569;font-style:italic;\">${offer.raison}</p><a href=\"${offer.url}\" style=\"display:inline-block;background:#3b82f6;color:white;padding:6px 14px;border-radius:4px;font-size:13px;text-decoration:none;\">Voir l'offre →</a></div>`;\n}\n\nconst cards = offers.map(buildCard).join('');\nconst warning = failedSources.length > 0\n  ? `<p style=\"color:#ef4444;font-size:13px;margin-top:24px;\">⚠️ Sources indisponibles cette semaine : ${failedSources.join(', ')}</p>`\n  : '';\n\nconst dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });\nconst html = `<html><body style=\"background:#f8fafc;padding:24px;\"><div style=\"max-width:600px;margin:0 auto;\"><h1 style=\"font-size:20px;color:#1e293b;margin-bottom:4px;\">🎯 Job Digest — ${dateStr}</h1><p style=\"color:#64748b;font-size:14px;margin-bottom:24px;\">${offers.length} offre${offers.length > 1 ? 's' : ''} sélectionnée${offers.length > 1 ? 's' : ''}</p>${cards}${warning}</div></body></html>`;\n\nreturn [{ json: { html, offerCount: offers.length, offers } }];"
       },
       "id": "node-fn-build-email-001",
       "name": "Build Email HTML",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [2920, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2920,
+        900
+      ]
     },
     {
       "parameters": {
@@ -327,7 +433,10 @@
       "name": "Has Offers?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [3140, 900]
+      "position": [
+        3140,
+        900
+      ]
     },
     {
       "parameters": {
@@ -341,17 +450,23 @@
       "name": "Send Digest",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
-      "position": [3360, 900]
+      "position": [
+        3360,
+        900
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.sentUrls) staticData.sentUrls = [];\n\nconst now = Date.now();\nconst offers = $('Build Email HTML').first().json.offers || [];\n\noffers.forEach(offer => {\n  if (offer.url) {\n    staticData.sentUrls.push({ url: offer.url, ts: now });\n  }\n});\n\nreturn [{ json: { markedCount: offers.length } }];"
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.sentUrls) staticData.sentUrls = [];\n\nconst now = Date.now();\nconst offers = $('Build Email HTML').first().json.offers || [];\n\noffers.forEach(offer => {\n  if (offer.url) {\n    staticData.sentUrls.push({ url: offer.url, ts: now });\n  }\n});\n\nreturn [{ json: { markedCount: offers.length } }];"
       },
       "id": "node-fn-mark-sent-001",
       "name": "Mark As Sent",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [3580, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3580,
+        900
+      ]
     },
     {
       "parameters": {},
@@ -359,122 +474,409 @@
       "name": "No Offers - Stop",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [3360, 1100]
+      "position": [
+        3360,
+        1100
+      ]
     }
   ],
   "connections": {
     "Schedule Trigger": {
-      "main": [[{ "node": "Config", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Config": {
       "main": [
         [
-          { "node": "Remotive RSS", "type": "main", "index": 0 },
-          { "node": "WWDR RSS", "type": "main", "index": 0 },
-          { "node": "JTMS API", "type": "main", "index": 0 },
-          { "node": "Indeed.es RSS", "type": "main", "index": 0 },
-          { "node": "WTTJ RSS", "type": "main", "index": 0 },
-          { "node": "InfoJobs API", "type": "main", "index": 0 },
-          { "node": "Tecnoempleo RSS", "type": "main", "index": 0 },
-          { "node": "Computrabajo RSS", "type": "main", "index": 0 },
-          { "node": "LinkedIn RSS", "type": "main", "index": 0 }
+          {
+            "node": "Remotive RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WWDR RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "JTMS API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Indeed.es RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WTTJ RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "InfoJobs API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tecnoempleo RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Computrabajo RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LinkedIn RSS",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Remotive RSS": {
-      "main": [[{ "node": "Normalize Remotive", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize Remotive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "WWDR RSS": {
-      "main": [[{ "node": "Normalize WWDR", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize WWDR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "JTMS API": {
-      "main": [[{ "node": "Normalize JTMS", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize JTMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Indeed.es RSS": {
-      "main": [[{ "node": "Normalize Indeed", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize Indeed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "WTTJ RSS": {
-      "main": [[{ "node": "Normalize WTTJ", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize WTTJ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "InfoJobs API": {
-      "main": [[{ "node": "Normalize InfoJobs", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize InfoJobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Tecnoempleo RSS": {
-      "main": [[{ "node": "Normalize Tecnoempleo", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize Tecnoempleo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Computrabajo RSS": {
-      "main": [[{ "node": "Normalize Computrabajo", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize Computrabajo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "LinkedIn RSS": {
-      "main": [[{ "node": "Normalize LinkedIn", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Normalize Remotive": {
-      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Normalize WWDR": {
-      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 1 }]]
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
     },
     "Normalize JTMS": {
-      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 2 }]]
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
     },
     "Normalize Indeed": {
-      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 3 }]]
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
     },
     "Normalize WTTJ": {
-      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 4 }]]
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
     },
     "Normalize InfoJobs": {
-      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 5 }]]
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
     },
     "Normalize Tecnoempleo": {
-      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 6 }]]
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
     },
     "Normalize Computrabajo": {
-      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 7 }]]
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 7
+          }
+        ]
+      ]
     },
     "Normalize LinkedIn": {
-      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 8 }]]
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 8
+          }
+        ]
+      ]
     },
     "Merge All Sources": {
-      "main": [[{ "node": "Dedup Same Week", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Dedup Same Week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Dedup Same Week": {
-      "main": [[{ "node": "Dedup Historical", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Dedup Historical",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Dedup Historical": {
-      "main": [[{ "node": "Rule Filter", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Rule Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Rule Filter": {
-      "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build Prompt": {
-      "main": [[{ "node": "Score LLM", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Score LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Score LLM": {
-      "main": [[{ "node": "Parse Score", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Parse Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Score": {
-      "main": [[{ "node": "Sort & Top N", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Sort & Top N",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Sort & Top N": {
-      "main": [[{ "node": "Build Email HTML", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build Email HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build Email HTML": {
-      "main": [[{ "node": "Has Offers?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Has Offers?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Has Offers?": {
       "main": [
-        [{ "node": "Send Digest", "type": "main", "index": 0 }],
-        [{ "node": "No Offers - Stop", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send Digest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Offers - Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Send Digest": {
-      "main": [[{ "node": "Mark As Sent", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Mark As Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "versionId": "job-agent-v1",
   "id": "job-agent-workflow",
-  "meta": { "templateCredsSetupCompleted": true }
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
 }
