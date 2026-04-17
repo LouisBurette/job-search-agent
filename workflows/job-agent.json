@@ -342,6 +342,24 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
       "position": [3360, 900]
+    },
+    {
+      "parameters": {
+        "functionCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.sentUrls) staticData.sentUrls = [];\n\nconst now = Date.now();\nconst offers = $('Build Email HTML').first().json.offers || [];\n\noffers.forEach(offer => {\n  if (offer.url) {\n    staticData.sentUrls.push({ url: offer.url, ts: now });\n  }\n});\n\nreturn [{ json: { markedCount: offers.length } }];"
+      },
+      "id": "node-fn-mark-sent-001",
+      "name": "Mark As Sent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [3580, 900]
+    },
+    {
+      "parameters": {},
+      "id": "node-noop-no-offers-001",
+      "name": "No Offers - Stop",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3360, 1100]
     }
   ],
   "connections": {
@@ -447,11 +465,14 @@
     "Has Offers?": {
       "main": [
         [{ "node": "Send Digest", "type": "main", "index": 0 }],
-        []
+        [{ "node": "No Offers - Stop", "type": "main", "index": 0 }]
       ]
+    },
+    "Send Digest": {
+      "main": [[{ "node": "Mark As Sent", "type": "main", "index": 0 }]]
     }
   },
-  "active": false,
+  "active": true,
   "settings": { "executionOrder": "v1" },
   "versionId": "job-agent-v1",
   "id": "job-agent-workflow",
