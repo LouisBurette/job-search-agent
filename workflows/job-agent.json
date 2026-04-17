@@ -235,6 +235,16 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [1600, 900]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\n\nfunction matchesGeo(localisation, geo) {\n  if (!localisation) return true;\n  const loc = localisation.toLowerCase();\n  return geo.some(g => loc.includes(g.toLowerCase()));\n}\n\nfunction matchesPoste(titre, description, postes) {\n  const text = `${titre} ${description}`.toLowerCase();\n  return postes.some(p => text.includes(p.toLowerCase()));\n}\n\nfunction matchesTeletravail(description, localisation) {\n  const text = `${description} ${localisation}`.toLowerCase();\n  return (\n    text.includes('remote') ||\n    text.includes('télétravail') ||\n    text.includes('teletrabajo') ||\n    text.includes('full remote') ||\n    text.includes('100%')\n  );\n}\n\nfunction avoidsSecteur(description, titre, secteurs_nok) {\n  const text = `${titre} ${description}`.toLowerCase();\n  return !secteurs_nok.some(s => text.includes(s.toLowerCase()));\n}\n\nfunction isRecent(dateStr, max_age_days) {\n  try {\n    const date = new Date(dateStr);\n    const cutoff = new Date(Date.now() - max_age_days * 24 * 60 * 60 * 1000);\n    return date >= cutoff;\n  } catch { return true; }\n}\n\nreturn $input.all().filter(item => {\n  const { titre, description, localisation, date } = item.json;\n\n  const geoOk = matchesGeo(localisation, config.geo) || matchesTeletravail(description, localisation);\n  if (!geoOk) return false;\n\n  if (!matchesPoste(titre, description, config.postes)) return false;\n\n  if (!avoidsSecteur(description, titre, config.secteurs_nok)) return false;\n\n  if (!isRecent(date, config.max_age_days)) return false;\n\n  return true;\n});"
+      },
+      "id": "node-fn-rule-filter-001",
+      "name": "Rule Filter",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1820, 900]
     }
   ],
   "connections": {
@@ -315,6 +325,9 @@
     },
     "Dedup Same Week": {
       "main": [[{ "node": "Dedup Historical", "type": "main", "index": 0 }]]
+    },
+    "Dedup Historical": {
+      "main": [[{ "node": "Rule Filter", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
