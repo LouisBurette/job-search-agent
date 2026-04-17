@@ -26,7 +26,7 @@ Agent automatisé qui collecte les offres d'emploi pertinentes depuis plusieurs 
 | Computrabajo | RSS / scrape | Espagne |
 | LinkedIn | RSS de recherche (limité) | Espagne + Remote |
 
-Toutes les requêtes incluent un filtre géographique : **Donostia / Espagne / Full Remote**.
+Toutes les requêtes incluent un filtre géographique : **Donostia (San Sebastián) ET/OU Full Remote**. Les offres localisées ailleurs en Espagne sans option full remote sont exclues.
 
 ---
 
