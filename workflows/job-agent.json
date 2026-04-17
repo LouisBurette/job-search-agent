@@ -23,11 +23,90 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://remotive.com/remote-jobs/rss?category=product&limit=50"
+      },
+      "id": "node-rss-remotive-001",
+      "name": "Remotive RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [700, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => ({\n    json: {\n      titre: item.json.title || '',\n      entreprise: item.json.creator || '',\n      url: item.json.link || '',\n      description: item.json.content || item.json.contentSnippet || '',\n      date: item.json.pubDate || '',\n      source: 'Remotive',\n      localisation: 'Remote',\n      salaire: '',\n    }\n  }));"
+      },
+      "id": "node-fn-remotive-001",
+      "name": "Normalize Remotive",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://weworkremotely.com/categories/remote-product-jobs.rss"
+      },
+      "id": "node-rss-wwdr-001",
+      "name": "WWDR RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nreturn $input.all()\n  .filter(item => new Date(item.json.pubDate) >= cutoff)\n  .map(item => {\n    const titleParts = (item.json.title || '').split(' at ');\n    return {\n      json: {\n        titre: titleParts[0]?.trim() || item.json.title || '',\n        entreprise: titleParts[1]?.trim() || '',\n        url: item.json.link || '',\n        description: item.json.content || item.json.contentSnippet || '',\n        date: item.json.pubDate || '',\n        source: 'We Work Remotely',\n        localisation: 'Remote',\n        salaire: '',\n      }\n    };\n  });"
+      },
+      "id": "node-fn-wwdr-001",
+      "name": "Normalize WWDR",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://jobsthatmakesense.com/feed",
+        "method": "GET"
+      },
+      "id": "node-http-jtms-001",
+      "name": "JTMS API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [700, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst maxAge = config.max_age_days;\nconst cutoff = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);\n\nconst jobs = $input.first().json.jobs || $input.all().map(i => i.json);\n\nreturn jobs\n  .filter(job => new Date(job.published_at || job.pubDate) >= cutoff)\n  .map(job => ({\n    json: {\n      titre: job.title || job.titre || '',\n      entreprise: job.company || job.entreprise || '',\n      url: job.url || job.link || '',\n      description: job.description || job.content || '',\n      date: job.published_at || job.pubDate || '',\n      source: 'Jobs That Make Sense',\n      localisation: job.location || 'Remote',\n      salaire: job.salary || '',\n    }\n  }));"
+      },
+      "id": "node-fn-jtms-001",
+      "name": "Normalize JTMS",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 500]
     }
   ],
   "connections": {
     "Schedule Trigger": {
       "main": [[{ "node": "Config", "type": "main", "index": 0 }]]
+    },
+    "Config": {
+      "main": [
+        [
+          { "node": "Remotive RSS", "type": "main", "index": 0 },
+          { "node": "WWDR RSS", "type": "main", "index": 0 },
+          { "node": "JTMS API", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Remotive RSS": {
+      "main": [[{ "node": "Normalize Remotive", "type": "main", "index": 0 }]]
+    },
+    "WWDR RSS": {
+      "main": [[{ "node": "Normalize WWDR", "type": "main", "index": 0 }]]
+    },
+    "JTMS API": {
+      "main": [[{ "node": "Normalize JTMS", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
