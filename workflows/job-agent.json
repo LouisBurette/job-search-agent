@@ -245,6 +245,61 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [1820, 900]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst offer = $input.first().json;\n\nconst prompt = `Tu es un assistant de recherche d'emploi. Évalue la pertinence de cette offre pour ce profil.\n\nPROFIL :\n- Postes recherchés : ${config.postes.join(', ')}\n- Contrats : ${config.contrats.join(', ')}\n- Salaire min : ${config.salaire_min}€\n- Télétravail : ${config.teletravail}\n- Secteurs appréciés : ${config.secteurs_ok.join(', ')}\n- Secteurs à éviter : ${config.secteurs_nok.join(', ')}\n- Expérience : ${config.experience_min}-${config.experience_max} ans\n- Stack / outils : ${config.stack.join(', ')}\n- Keywords d'intérêt : ${config.keywords.join(', ')}\n- Langues : ${config.langues.join(', ')}\n\nOFFRE :\nTitre : ${offer.titre}\nEntreprise : ${offer.entreprise}\nSource : ${offer.source}\nLocalisation : ${offer.localisation}\nSalaire : ${offer.salaire || 'non précisé'}\nDescription : ${(offer.description || '').substring(0, 1500)}\n\nRéponds UNIQUEMENT en JSON valide, sans markdown, sans commentaire :\n{ \"score\": <entier 1-10>, \"raison\": \"<2 phrases max en français>\" }`;\n\nreturn [{ json: { ...offer, prompt } }];"
+      },
+      "id": "node-fn-build-prompt-001",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2040, 900]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $vars.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 150,\n  \"messages\": [{ \"role\": \"user\", \"content\": {{ JSON.stringify($json.prompt) }} }]\n}"
+      },
+      "id": "node-http-score-llm-001",
+      "name": "Score LLM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [2260, 900]
+    },
+    {
+      "parameters": {
+        "functionCode": "const offer = $input.first().json;\nconst rawResponse = $input.first().json.content?.[0]?.text || '{}';\n\nlet score = null;\nlet raison = '';\n\ntry {\n  const parsed = JSON.parse(rawResponse);\n  score = parsed.score || null;\n  raison = parsed.raison || '';\n} catch (e) {\n  score = null;\n  raison = 'Score non disponible';\n}\n\nreturn [{ json: { ...offer, score, raison } }];"
+      },
+      "id": "node-fn-parse-score-001",
+      "name": "Parse Score",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2480, 900]
+    },
+    {
+      "parameters": {
+        "functionCode": "const config = $('Config').first().json;\nconst offers = $input.all().map(i => i.json);\n\noffers.sort((a, b) => {\n  if (a.score === null) return 1;\n  if (b.score === null) return -1;\n  return b.score - a.score;\n});\n\nreturn offers.slice(0, config.top_n).map(o => ({ json: o }));"
+      },
+      "id": "node-fn-sort-top-n-001",
+      "name": "Sort & Top N",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2700, 900]
     }
   ],
   "connections": {
@@ -328,6 +383,18 @@
     },
     "Dedup Historical": {
       "main": [[{ "node": "Rule Filter", "type": "main", "index": 0 }]]
+    },
+    "Rule Filter": {
+      "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
+    },
+    "Build Prompt": {
+      "main": [[{ "node": "Score LLM", "type": "main", "index": 0 }]]
+    },
+    "Score LLM": {
+      "main": [[{ "node": "Parse Score", "type": "main", "index": 0 }]]
+    },
+    "Parse Score": {
+      "main": [[{ "node": "Sort & Top N", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
