@@ -205,6 +205,36 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [920, 1700]
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "node-merge-001",
+      "name": "Merge All Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1160, 900]
+    },
+    {
+      "parameters": {
+        "functionCode": "const seen = new Set();\nreturn $input.all().filter(item => {\n  const url = item.json.url;\n  if (!url || seen.has(url)) return false;\n  seen.add(url);\n  return true;\n});"
+      },
+      "id": "node-fn-dedup-week-001",
+      "name": "Dedup Same Week",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1380, 900]
+    },
+    {
+      "parameters": {
+        "functionCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.sentUrls) staticData.sentUrls = [];\n\nconst thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;\nstaticData.sentUrls = staticData.sentUrls.filter(entry => entry.ts > thirtyDaysAgo);\n\nconst sentSet = new Set(staticData.sentUrls.map(e => e.url));\n\nconst newOffers = $input.all().filter(item => !sentSet.has(item.json.url));\n\nreturn newOffers;"
+      },
+      "id": "node-fn-dedup-hist-001",
+      "name": "Dedup Historical",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1600, 900]
     }
   ],
   "connections": {
@@ -252,6 +282,39 @@
     },
     "LinkedIn RSS": {
       "main": [[{ "node": "Normalize LinkedIn", "type": "main", "index": 0 }]]
+    },
+    "Normalize Remotive": {
+      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 0 }]]
+    },
+    "Normalize WWDR": {
+      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 1 }]]
+    },
+    "Normalize JTMS": {
+      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 2 }]]
+    },
+    "Normalize Indeed": {
+      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 3 }]]
+    },
+    "Normalize WTTJ": {
+      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 4 }]]
+    },
+    "Normalize InfoJobs": {
+      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 5 }]]
+    },
+    "Normalize Tecnoempleo": {
+      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 6 }]]
+    },
+    "Normalize Computrabajo": {
+      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 7 }]]
+    },
+    "Normalize LinkedIn": {
+      "main": [[{ "node": "Merge All Sources", "type": "main", "index": 8 }]]
+    },
+    "Merge All Sources": {
+      "main": [[{ "node": "Dedup Same Week", "type": "main", "index": 0 }]]
+    },
+    "Dedup Same Week": {
+      "main": [[{ "node": "Dedup Historical", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
