@@ -553,16 +553,45 @@ def build_email(offers: list, failed_sources: list) -> str:
 
 def build_fallback_email(reason: str) -> str:
     date_str = datetime.now().strftime("%A %d %B %Y")
+    postes = ", ".join(CONFIG["postes"])
+    sources_list = ", ".join(s["name"] for s in SOURCES + build_apify_sources(CONFIG))
     return f"""<!DOCTYPE html>
-<html><body style="background:#f1f5f9;padding:24px;margin:0;">
+<html><body style="background:#f1f5f9;padding:24px;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 <div style="max-width:620px;margin:0 auto;">
-  <div style="background:white;border-radius:12px;padding:24px;border:1px solid #e2e8f0;">
-    <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;">🎯 Job Digest</h1>
-    <p style="color:#64748b;font-size:13px;margin:0 0 16px;">{date_str}</p>
-    <p style="color:#475569;font-size:14px;margin:0;">No relevant offers found this week — {reason}.</p>
-    <p style="color:#94a3b8;font-size:13px;margin:12px 0 0;">The agent ran successfully and will try again next Monday.</p>
+
+  <div style="background:white;border-radius:12px;padding:28px 28px 24px;margin-bottom:12px;border:1px solid #e2e8f0;">
+    <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:0 0 4px;">🎯 Job Digest</h1>
+    <p style="color:#94a3b8;font-size:13px;margin:0;">{date_str}</p>
   </div>
-  <p style="color:#94a3b8;font-size:11px;text-align:center;margin-top:16px;">Job Agent — {datetime.now().strftime("%Y")}</p>
+
+  <div style="background:white;border-radius:12px;padding:32px 28px;margin-bottom:12px;border:1px solid #e2e8f0;text-align:center;">
+    <div style="font-size:40px;margin-bottom:16px;">🔍</div>
+    <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin:0 0 10px;">Nothing this week</h2>
+    <p style="color:#64748b;font-size:14px;line-height:1.6;margin:0 0 6px;">
+      The agent scanned <strong style="color:#0f172a;">8 sources</strong> but no offer scored above <strong style="color:#0f172a;">5/10</strong> this week.
+    </p>
+    <p style="color:#94a3b8;font-size:13px;margin:0;">Back next Monday with a fresh scan.</p>
+  </div>
+
+  <div style="background:white;border-radius:12px;padding:20px 28px;margin-bottom:12px;border:1px solid #e2e8f0;">
+    <p style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 12px;">Your criteria</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="padding:4px 0;font-size:13px;color:#64748b;width:40%;">Roles</td>
+        <td style="padding:4px 0;font-size:13px;color:#0f172a;font-weight:500;">{postes}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;font-size:13px;color:#64748b;">Min. score</td>
+        <td style="padding:4px 0;font-size:13px;color:#0f172a;font-weight:500;">{CONFIG["score_min"]}/10</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;font-size:13px;color:#64748b;">Sources scanned</td>
+        <td style="padding:4px 0;font-size:13px;color:#0f172a;font-weight:500;">{sources_list}</td>
+      </tr>
+    </table>
+  </div>
+
+  <p style="color:#cbd5e1;font-size:11px;text-align:center;margin-top:8px;">Job Agent — {datetime.now().strftime("%Y")}</p>
 </div>
 </body></html>"""
 
