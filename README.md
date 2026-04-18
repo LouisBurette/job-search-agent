@@ -1,34 +1,65 @@
 # Job Agent
 
-Workflow n8n self-hosted — digest email hebdomadaire d'offres d'emploi.
+Agent de veille emploi automatisé — reçois chaque lundi matin un digest email des offres pertinentes, scorées par IA.
 
-## Setup
+**Sources :** Indeed (ES + FR), LinkedIn, Welcome to the Jungle, RemoteOK, Jobicy, Jobspresso, We Work Remotely
+**Scoring :** Claude (Anthropic) note chaque offre de 1 à 10 selon tes critères
+**Déduplication :** les offres déjà vues ne remontent pas (fenêtre 30 jours)
 
-1. Importer `workflows/job-agent.json` dans n8n (Settings → Import Workflow)
-2. Configurer les credentials dans n8n :
-   - **Anthropic API** : clé API depuis console.anthropic.com
-   - **SMTP** : paramètres de ton serveur email
-   - **InfoJobs** : clé API depuis developer.infojobs.net
-3. Configurer les variables n8n (Settings → Variables) :
-   - `ANTHROPIC_API_KEY` : ta clé Anthropic
-   - `EMAIL_FROM` : adresse d'envoi
-   - `EMAIL_TO` : adresse de réception
-4. Activer le workflow
+---
 
-## Sources
+## Prérequis
 
-| Source | Type | Zone |
-|---|---|---|
-| Remotive | RSS | Remote international |
-| We Work Remotely | RSS | Remote international |
-| Jobs That Make Sense | RSS/API | Remote international |
-| Indeed.es | RSS | Donostia + Remote |
-| Welcome to the Jungle | RSS | Espagne + Remote |
-| InfoJobs | API | Espagne |
-| Tecnoempleo | RSS | Espagne tech |
-| Computrabajo | RSS | Espagne |
-| LinkedIn | RSS | Donostia + Remote |
+- Compte [Anthropic](https://console.anthropic.com) — clé API (~0.01€/run)
+- Compte [Apify](https://apify.com) — token API (~0.40€/run, offre gratuite disponible)
+- Compte Gmail avec un [App Password](https://myaccount.google.com/apppasswords) activé
 
-## Modifier les critères
+## Installation
 
-Ouvrir le nœud **Config** dans n8n et modifier le JSON.
+```bash
+git clone https://github.com/TON_USERNAME/job-agent.git
+cd job-agent
+python -m venv .venv
+source .venv/bin/activate  # Windows : .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Copie `.env.example` en `.env` et renseigne tes credentials :
+
+```bash
+cp .env.example .env
+```
+
+## Configuration
+
+Modifie le bloc `CONFIG` en haut de `job_agent.py` :
+
+```python
+CONFIG = {
+    "postes": ["Product Manager", "Data Product Manager"],
+    "score_min": 5,
+    "apify": {
+        "query": "product manager",
+        "max_items_per_source": 25,
+        "indeed_es_location": "Donostia San Sebastian",
+        "indeed_fr_location": "Bayonne",
+    }
+}
+```
+
+## Lancer manuellement
+
+```bash
+.venv/bin/python job_agent.py
+```
+
+## Automatiser avec GitHub Actions
+
+Pour recevoir le digest chaque lundi à 9h sans laisser ton ordinateur allumé :
+
+1. Fork ce repo sur GitHub
+2. Va dans **Settings → Secrets and variables → Actions**
+3. Ajoute chaque variable de ton `.env` comme secret
+4. Le workflow `.github/workflows/weekly-digest.yml` se déclenche automatiquement
+
+Tu peux aussi lancer manuellement depuis **Actions → Weekly Job Digest → Run workflow**.
