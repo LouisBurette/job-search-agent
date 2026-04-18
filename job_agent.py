@@ -213,6 +213,9 @@ def normalize_apify_item(item: dict, source_name: str, default_location: str) ->
         loc = item.get("location", {})
         salary = item.get("salary", {})
         company = item.get("company", {})
+        job_type = item.get("jobType") or item.get("employmentType") or ""
+        if isinstance(job_type, list):
+            job_type = job_type[0] if job_type else ""
         return {
             "titre": title.get("text", "") if isinstance(title, dict) else str(title),
             "entreprise": company.get("name", "") if isinstance(company, dict) else "",
@@ -222,6 +225,7 @@ def normalize_apify_item(item: dict, source_name: str, default_location: str) ->
             "source": source_name,
             "localisation": f"{loc.get('city', '')} {loc.get('countryCode', '')}".strip() if isinstance(loc, dict) else default_location,
             "salaire": salary.get("text", "") if isinstance(salary, dict) else "",
+            "contrat": str(job_type),
         }
 
     if source_name == "LinkedIn":
@@ -234,6 +238,7 @@ def normalize_apify_item(item: dict, source_name: str, default_location: str) ->
             "source": source_name,
             "localisation": item.get("location", default_location),
             "salaire": item.get("salary_range", ""),
+            "contrat": item.get("employment_type", "") or item.get("contract_type", ""),
         }
 
     if source_name == "Welcome to the Jungle":
@@ -247,6 +252,9 @@ def normalize_apify_item(item: dict, source_name: str, default_location: str) ->
             salaire = f"{sal_min:,}–{sal_max:,} {currency}/an"
         elif sal_min:
             salaire = f"≥ {sal_min:,} {currency}/an"
+        contract_raw = item.get("contractType") or item.get("contract_type") or ""
+        if isinstance(contract_raw, list):
+            contract_raw = contract_raw[0] if contract_raw else ""
         return {
             "titre": item.get("title", ""),
             "entreprise": item.get("companyName", ""),
@@ -256,6 +264,7 @@ def normalize_apify_item(item: dict, source_name: str, default_location: str) ->
             "source": source_name,
             "localisation": loc,
             "salaire": salaire,
+            "contrat": str(contract_raw),
         }
 
     return None
@@ -457,10 +466,22 @@ def extract_tags(offer: dict) -> str:
             val = m.group(0).strip()
             tags.append(("💰", val, "#15803d", "#dcfce7"))
 
-    # Stack match
+    # Contract type
+    contrat = offer.get("contrat", "").strip()
+    if contrat:
+        tags.append(("📄", contrat, "#475569", "#f1f5f9"))
+
+    # Stack match from LLM
     stack_match = td.get("stack_match", [])
     for kw in stack_match[:3]:
         tags.append(("⚙️", kw, "#1d4ed8", "#eff6ff"))
+
+    # Keywords from CONFIG matched in offer text
+    text = f"{offer.get('titre', '')} {desc}"
+    matched_keywords = [kw for kw in CONFIG["keywords"] if kw.lower() in text]
+    for kw in matched_keywords[:3]:
+        if kw not in [t[1].lower() for t in tags]:
+            tags.append(("🔑", kw, "#6d28d9", "#ede9fe"))
 
     # Experience mentioned in title/description
     exp_m = re.search(r'(\d+)\+?\s*(?:years?|ans?|yrs?)\s*(?:of\s*)?(?:experience|expérience)?', desc[:500])
@@ -530,9 +551,25 @@ def build_email(offers: list, failed_sources: list) -> str:
 </div>
 </body></html>"""
 
+def build_fallback_email(reason: str) -> str:
+    date_str = datetime.now().strftime("%A %d %B %Y")
+    return f"""<!DOCTYPE html>
+<html><body style="background:#f1f5f9;padding:24px;margin:0;">
+<div style="max-width:620px;margin:0 auto;">
+  <div style="background:white;border-radius:12px;padding:24px;border:1px solid #e2e8f0;">
+    <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;">🎯 Job Digest</h1>
+    <p style="color:#64748b;font-size:13px;margin:0 0 16px;">{date_str}</p>
+    <p style="color:#475569;font-size:14px;margin:0;">No relevant offers found this week — {reason}.</p>
+    <p style="color:#94a3b8;font-size:13px;margin:12px 0 0;">The agent ran successfully and will try again next Monday.</p>
+  </div>
+  <p style="color:#94a3b8;font-size:11px;text-align:center;margin-top:16px;">Job Agent — {datetime.now().strftime("%Y")}</p>
+</div>
+</body></html>"""
+
+
 # ── Email send ───────────────────────────────────────────────────────────────
 
-def send_email(html: str, offer_count: int) -> None:
+def send_email(html: str, offer_count: int, fallback: bool = False) -> None:
     host = os.environ["SMTP_HOST"]
     port = int(os.environ.get("SMTP_PORT", 587))
     user = os.environ["SMTP_USER"]
@@ -541,7 +578,10 @@ def send_email(html: str, offer_count: int) -> None:
     to_addr = os.environ["EMAIL_TO"]
 
     date_str = datetime.now().strftime("%d/%m/%Y")
-    subject = f"🎯 Job Digest — {date_str} ({offer_count} offre{'s' if offer_count > 1 else ''})"
+    if fallback:
+        subject = f"🎯 Job Digest — {date_str} (no results this week)"
+    else:
+        subject = f"🎯 Job Digest — {date_str} ({offer_count} offre{'s' if offer_count > 1 else ''})"
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
@@ -614,7 +654,8 @@ def main() -> None:
     print(f"   {len(filtered)} offers retained")
 
     if not filtered:
-        print("\n✗ No offers after filtering — email not sent.")
+        print("\n✗ No offers after filtering — sending fallback email.")
+        send_email(build_fallback_email("no offers matched your criteria"), 0, fallback=True)
         save_state(state)
         return
 
@@ -627,7 +668,8 @@ def main() -> None:
     print(f"   {len(qualified)} offers with score ≥ {CONFIG['score_min']}/10")
 
     if not qualified:
-        print("\n✗ No offers above threshold — email not sent.")
+        print("\n✗ No offers above threshold — sending fallback email.")
+        send_email(build_fallback_email("all offers scored below threshold"), 0, fallback=True)
         save_state(state)
         return
 
