@@ -10,6 +10,12 @@
 
 ## Structure générale
 
+### Section 0 — Disclaimer d'ouverture
+
+Callout bleu : Ce playbook s'adresse à tout le monde — y compris ceux qui n'ont jamais touché à du code. Certaines étapes peuvent sembler techniques au premier regard, mais chaque action est expliquée pas à pas. C'est aussi l'occasion de découvrir des outils comme Claude, Apify et GitHub qui pourront te servir bien au-delà de cet agent.
+
+---
+
 ### Section 1 — Pourquoi cet agent va changer ta façon de chercher
 
 - Callout orange "Le problème" : scanner 8 plateformes manuellement, se noyer dans les offres hors-sujet, rater les bonnes parce qu'elles ont été publiées un mercredi
@@ -104,9 +110,11 @@ Explication champ par champ :
 - `salaire_min` : salaire minimum indicatif (utilisé par l'IA pour scorer)
 - `experience_min` / `experience_max` : années d'expérience attendues
 - `apify.query` : terme de recherche principal envoyé aux plateformes (ex: `"product manager"`)
-- `apify.indeed_fr_location` : ville pour Indeed France (ex: `"Paris"`)
-- `apify.indeed_es_location` : ville pour Indeed Espagne
-- `apify.wttj_contract` : type de contrat sur WTTJ (`"CDI"`, `"Freelance"`, etc.)
+- `apify.query` : terme de recherche principal envoyé à toutes les plateformes Apify (Indeed FR, Indeed ES, LinkedIn, Welcome to the Jungle)
+- `apify.indeed_fr_location` : ville cible pour Indeed France (ex: `"Paris"`) — les autres plateformes Apify utilisent le même service de scraping mais certaines ignorent la localisation et renvoient des offres remote ou mondiales
+- `apify.indeed_es_location` : ville cible pour Indeed Espagne
+- `apify.wttj_contract` : type de contrat sur Welcome to the Jungle (`"CDI"`, `"Freelance"`, etc.)
+- Callout bleu : "Indeed FR et Indeed ES, LinkedIn et Welcome to the Jungle utilisent tous Apify pour collecter les offres — c'est le même service en arrière-plan. Les champs `indeed_fr_location` et `indeed_es_location` permettent de cibler une ville précise sur ces deux sources."
 
 Callout rouge : "Ne mets jamais tes clés API dans ce fichier. Elles restent dans GitHub Secrets (étape 3)."
 Callout bleu : "Pour la localisation, l'agent garde les offres full remote ET les offres dans ta zone géographique."
@@ -147,7 +155,23 @@ Tableau récapitulatif :
 - GitHub Actions : gratuit
 - **Total : ~1,64€/mois**
 
-Callout vert : "Les crédits gratuits d'Anthropic et Apify couvrent les premiers mois."
+Callout vert : "Le plan gratuit d'Apify ($5/mois de crédit offert) couvre largement l'usage de cet agent (~$1.60/mois). Les crédits Anthropic offerts couvrent également les premiers mois."
+
+---
+
+### Section 6 — Aller plus loin et personnaliser l'agent
+
+Explication : l'agent est entièrement personnalisable. Si tu veux aller plus loin — ajouter une source, changer la logique de scoring, modifier le format de l'email — il existe un outil fait pour ça : **Claude Code**.
+
+**Comment faire :**
+1. Installer Claude Code : `npm install -g @anthropic-ai/claude-code` (nécessite Node.js)
+2. Ouvrir un terminal dans le dossier du projet
+3. Lancer `claude` → l'agent superpowers se présente
+4. Expliquer ta demande en langage naturel (ex : "je veux aussi recevoir les offres en Allemagne" ou "ajoute une section salaire dans l'email")
+5. L'agent analyse le code, propose une solution, et l'implémente sous tes yeux — il suffit de valider
+
+Callout bleu : "Pas besoin de savoir coder. Tu décris ce que tu veux en français, Claude Code comprend et modifie le projet pour toi."
+Callout orange : "Claude Code est un outil payant (abonnement Claude Pro ou API). Mais même quelques minutes d'utilisation suffisent pour des modifications simples."
 
 ---
 
