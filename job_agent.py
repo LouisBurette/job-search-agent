@@ -313,13 +313,13 @@ def fetch_apify_source(source: dict, max_age_days: int) -> tuple:
 # ── Filtering ────────────────────────────────────────────────────────────────
 
 def matches_poste(offer: dict) -> bool:
-    text = f"{offer['titre']} {offer['description']}".lower()
+    text = f"{offer.get('titre') or ''} {offer.get('description') or ''}".lower()
     return any(p.lower() in text for p in CONFIG["postes"])
 
 
 def matches_geo(offer: dict) -> bool:
-    loc = offer.get("localisation", "").lower()
-    desc = offer.get("description", "").lower()
+    loc = (offer.get("localisation") or "").lower()
+    desc = (offer.get("description") or "").lower()
 
     # 1. Location explicitly remote
     if any(k in loc for k in REMOTE_KEYWORDS):
@@ -334,7 +334,7 @@ def matches_geo(offer: dict) -> bool:
 
 
 def avoids_secteur(offer: dict) -> bool:
-    text = f"{offer['titre']} {offer['description']}".lower()
+    text = f"{offer.get('titre') or ''} {offer.get('description') or ''}".lower()
     return not any(s.lower() in text for s in CONFIG["secteurs_nok"])
 
 
