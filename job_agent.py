@@ -27,42 +27,107 @@ feedparser.USER_AGENT = "Mozilla/5.0 (compatible; JobAgent/1.0)"
 # ── Configuration ────────────────────────────────────────────────────────────
 
 CONFIG = {
-    "postes": ["Product Manager", "Data Product Manager"],
-    "contrats": ["CDI"],
-    "salaire_min": 45000,
-    "teletravail": "full",
-    "secteurs_ok": ["tech", "impact", "SaaS"],
-    "secteurs_nok": ["défense", "defense", "gambling", "casino", "crypto", "jeux d'argent", "armement", "weapons"],
-    "experience_min": 3,
-    "experience_max": 5,
-    "stack": ["n8n", "claude", "Notion", "Jira", "SQL", "Airtable"],
-    "keywords": ["ai agents", "LLM", "automation", "no-code", "low-code", "impact", "ESS", "ONG"],
-    "langues": ["fr", "en", "es"],
-    "max_age_days": 7,
-    "top_n": 15,
-    "score_min": 5,
+    "mandatory": {
+        "postes": ["Product Manager", "COO", "Operational Director"],
+        # Multilingual aliases — add translations when postes change
+        "postes_aliases": [
+            # Product Manager
+            "chef de produit", "responsable produit", "responsable de produit",
+            # COO / Operational Director
+            "directeur des opérations", "directeur des operations",
+            "directeur opérationnel", "responsable des opérations",
+            "director de operaciones", "responsable operativo",
+            "head of operations", "operations director", "director of operations",
+            "chief operating officer",
+        ],
+        "contrats": ["CDI"],
+        "remote": "full",
+        "company_location": ["France", "Spain"],
+        "salaire_min": 45000,
+        "secteurs_nok": [
+            "defense", "crypto", "fossil energy", "gambling",
+            "adult industry", "drugs", "alcohol", "tobacco", "weapons",
+        ],
+    },
+    "wished": {
+        "secteurs_ok": [
+            "tech for good", "ecology", "social", "b-corp",
+            "association", "ngo", "green tech", "sustainability",
+            "mobility", "sport",
+        ],
+        "stack": ["n8n", "claude code"],
+        "keywords": ["ai agents", "automation", "ai systems", "artificial intelligence"],
+    },
+    "settings": {
+        "score_min": 7,
+        "top_n": 15,
+        "max_age_days": 10,
+        # Local geo areas accepted as alternatives to full remote.
+        # Format: { "Display Label": ["keyword1", "keyword2", ...] }
+        # The label is used directly in the email tag — edit here to rename or add zones.
+        "geo_local": {
+            "Donostia": ["donostia", "san sebastián", "san sebastian", "gipuzkoa"],
+            "Pays Basque FR": ["bayonne", "biarritz", "anglet", "hendaye", "bidart", "saint-jean-de-luz", "saint jean de luz"],
+            "Pays Basque": ["pays basque", "país vasco", "euskadi", "pyrénées-atlantiques", "côte basque"],
+        },
+        # Job title substrings that immediately disqualify an offer before LLM scoring
+        "titres_exclus": [
+            "cuisinier", "chef de cuisine", "chef de partie", "commis", "serveur", "plongeur",
+            "albañil", "peón", "limpieza", "ayudante de cocina",
+            "developer", "engineer", "designer", "editor", "teacher", "historian", "artist",
+            "clerk", "scheduler", "assistant", "representative", "recruiter", "marketing coordinator",
+            "social media", "paralegal", "nurse", "technician", "physician", "accountant",
+            "analyst", "specialist", "coordinator", "associate", "intern", "junior",
+            "sales operations", "marketing operations", "hr operations",
+            "customer operations", "it operations", "revenue operations",
+        ],
+    },
     # Apify scraping parameters — injected into requests, edit here to change the search
     "apify": {
-        "query": "product manager",          # main search term
-        "max_items_per_source": 25,          # limit per source (cost control)
-        "indeed_es_location": "Donostia San Sebastian",
-        "indeed_fr_location": "Bayonne",
-        "linkedin_filters": "f_WT=2&f_JT=F&f_TPR=r604800",  # remote + full-time + last 7 days
+        "query": '"Product Manager" OR "COO" OR "Director of Operations"',
+        "max_items_per_source": 50,
+        "linkedin_filters": "f_WT=2&f_JT=F",  # remote + full-time (time range injected from settings.max_age_days)
         "wttj_contract": "CDI",
+        # ISO 3166-1 alpha-2 codes for each country in mandatory.company_location
+        "country_iso": {
+            "France": "FR",
+            "Spain": "ES",
+        },
     },
 }
-
-# Accepted geographic areas (outside full remote)
-GEO_LOCAL = [
-    "donostia", "san sebastián", "san sebastian", "gipuzkoa", "pays basque", "país vasco", "euskadi",
-    "bayonne", "biarritz", "anglet", "hendaye", "bidart", "saint-jean-de-luz",
-    "saint jean de luz", "pyrénées-atlantiques", "côte basque",
-]
 
 REMOTE_KEYWORDS = [
     "remote", "full remote", "fully remote", "100% remote", "remote-first",
     "télétravail", "teletrabajo", "home office", "distributed",
 ]
+
+
+def get_role_keywords(config: dict) -> list[str]:
+    """Derive title-matching keywords from CONFIG — no manual update needed when postes change."""
+    keywords = [p.lower() for p in config["mandatory"]["postes"]]
+    keywords += [a.lower() for a in config["mandatory"].get("postes_aliases", [])]
+    return keywords
+
+# Country name aliases — knowledge base used to detect explicit non-target locations in RSS feeds.
+# Add entries here if a new country needs to be recognisable (either as a target or as an exclusion).
+COUNTRY_ALIASES: dict[str, list[str]] = {
+    "france":         ["france", "français", "francais"],
+    "spain":          ["spain", "españa", "espagne", "espana"],
+    "united states":  ["united states", "usa", "u.s.a", "us-only", "us only"],
+    "united kingdom": ["united kingdom", "uk", "england", "britain"],
+    "canada":         ["canada"],
+    "australia":      ["australia"],
+    "germany":        ["germany", "deutschland"],
+    "netherlands":    ["netherlands", "holland"],
+    "sweden":         ["sweden"],
+    "switzerland":    ["switzerland"],
+    "india":          ["india"],
+    "singapore":      ["singapore"],
+    "brazil":         ["brazil"],
+    "mexico":         ["mexico"],
+    "japan":          ["japan"],
+    "china":          ["china"],
+}
 
 SOURCES = [
     {
@@ -89,44 +154,44 @@ SOURCES = [
 
 def build_apify_sources(config: dict) -> list:
     ap = config["apify"]
+    countries = config["mandatory"]["company_location"]
     q = ap["query"]
     n = ap["max_items_per_source"]
+    iso = ap["country_iso"]
+    max_age_days = config["settings"]["max_age_days"]
+    linkedin_filters = f"{ap['linkedin_filters']}&f_TPR=r{max_age_days * 86400}"
     from urllib.parse import quote_plus
-    return [
-        {
-            "name": "Indeed.es",
-            "actor_id": "BIeK7ZcYUrdxDgOEQ",
-            "input": {"position": q, "location": ap["indeed_es_location"], "country": "ES", "maxItems": n},
-            "default_location": "Donostia / Espagne",
-        },
-        {
-            "name": "Indeed.fr",
-            "actor_id": "BIeK7ZcYUrdxDgOEQ",
-            "input": {"position": q, "location": ap["indeed_fr_location"], "country": "FR", "maxItems": n},
-            "default_location": "Pays Basque FR",
-        },
-        {
-            "name": "LinkedIn",
+
+    sources = []
+    for country in countries:
+        code = iso.get(country, country[:2].upper())
+
+        # Indeed excluded: no CDI/remote filter available at platform level — too much noise
+
+        wttj_urls = [
+            {"url": f"https://www.welcometothejungle.com/fr/jobs?query={quote_plus(q)}&refinementList[contract_type][]={ap['wttj_contract']}&refinementList[offices.country_code][]={code}"},
+        ]
+        if country == countries[0]:
+            # include full-remote URL once (WTTJ is a French platform — results are mostly FR companies)
+            wttj_urls.insert(0, {"url": f"https://www.welcometothejungle.com/fr/jobs?query={quote_plus(q)}&refinementList[contract_type][]={ap['wttj_contract']}&refinementList[remote][]=fulltime"})
+        sources.append({
+            "name": f"Welcome to the Jungle ({country})",
+            "actor_id": "ip6ZC7cs8a1YUxBoC",
+            "input": {"startUrls": wttj_urls, "maxItems": n},
+            "default_location": country,
+        })
+
+        sources.append({
+            "name": f"LinkedIn ({country})",
             "actor_id": "JkfTWxtpgfvcRQn3p",
             "input": {
-                "searchUrl": f"https://www.linkedin.com/jobs/search/?keywords={quote_plus(q)}&{ap['linkedin_filters']}",
+                "searchUrl": f"https://www.linkedin.com/jobs/search/?keywords={quote_plus(q)}&location={quote_plus(country)}&{linkedin_filters}",
                 "maxItems": n,
             },
-            "default_location": "Remote",
-        },
-        {
-            "name": "Welcome to the Jungle",
-            "actor_id": "ip6ZC7cs8a1YUxBoC",
-            "input": {
-                "startUrls": [
-                    {"url": f"https://www.welcometothejungle.com/fr/jobs?query={quote_plus(q)}&refinementList[contract_type][]={ap['wttj_contract']}&refinementList[remote][]=fulltime"},
-                    {"url": f"https://www.welcometothejungle.com/fr/jobs?query={quote_plus(q)}&refinementList[contract_type][]={ap['wttj_contract']}&refinementList[offices.country_code][]=ES"},
-                ],
-                "maxItems": n,
-            },
-            "default_location": "Remote / Espagne",
-        },
-    ]
+            "default_location": country,
+        })
+
+    return sources
 
 STATE_FILE = Path(__file__).parent / "state.json"
 
@@ -208,27 +273,7 @@ def fetch_source(source: dict, max_age_days: int) -> tuple:
 def normalize_apify_item(item: dict, source_name: str, default_location: str) -> Optional[dict]:
     """Normalize an Apify item based on the source."""
 
-    if source_name.startswith("Indeed"):
-        title = item.get("title", {})
-        loc = item.get("location", {})
-        salary = item.get("salary", {})
-        company = item.get("company", {})
-        job_type = item.get("jobType") or item.get("employmentType") or ""
-        if isinstance(job_type, list):
-            job_type = job_type[0] if job_type else ""
-        return {
-            "titre": title.get("text", "") if isinstance(title, dict) else str(title),
-            "entreprise": company.get("name", "") if isinstance(company, dict) else "",
-            "url": (item.get("urls") or {}).get("indeed") or (item.get("urls") or {}).get("external") or "",
-            "description": item.get("description") or item.get("snippet", {}).get("text", "") if isinstance(item.get("snippet"), dict) else item.get("description", ""),
-            "date": item.get("datePosted") or item.get("date") or "",
-            "source": source_name,
-            "localisation": f"{loc.get('city', '')} {loc.get('countryCode', '')}".strip() if isinstance(loc, dict) else default_location,
-            "salaire": salary.get("text", "") if isinstance(salary, dict) else "",
-            "contrat": str(job_type),
-        }
-
-    if source_name == "LinkedIn":
+    if source_name.startswith("LinkedIn"):
         return {
             "titre": item.get("job_title", ""),
             "entreprise": item.get("company_name", ""),
@@ -241,7 +286,7 @@ def normalize_apify_item(item: dict, source_name: str, default_location: str) ->
             "contrat": item.get("employment_type", "") or item.get("contract_type", ""),
         }
 
-    if source_name == "Welcome to the Jungle":
+    if source_name.startswith("Welcome to the Jungle"):
         offices = item.get("offices", [])
         loc = offices[0].get("city", default_location) if offices else default_location
         sal_min = item.get("salaryYearlyMin")
@@ -312,87 +357,115 @@ def fetch_apify_source(source: dict, max_age_days: int) -> tuple:
 
 # ── Filtering ────────────────────────────────────────────────────────────────
 
-def matches_poste(offer: dict) -> bool:
-    text = f"{offer.get('titre') or ''} {offer.get('description') or ''}".lower()
-    return any(p.lower() in text for p in CONFIG["postes"])
-
-
-def matches_geo(offer: dict) -> bool:
-    loc = (offer.get("localisation") or "").lower()
-    desc = (offer.get("description") or "").lower()
-
-    # 1. Location explicitly remote
-    if any(k in loc for k in REMOTE_KEYWORDS):
-        return True
-    # 2. Description mentions full remote
-    if any(k in desc for k in REMOTE_KEYWORDS):
-        return True
-    # 3. Location in accepted area
-    if any(g in loc for g in GEO_LOCAL):
-        return True
-    return False
-
-
 def avoids_secteur(offer: dict) -> bool:
     text = f"{offer.get('titre') or ''} {offer.get('description') or ''}".lower()
-    return not any(s.lower() in text for s in CONFIG["secteurs_nok"])
+    return not any(s.lower() in text for s in CONFIG["mandatory"]["secteurs_nok"])
+
+
+def rss_location_ok(offer: dict) -> bool:
+    """For RSS feeds only: reject if location explicitly names a country not in company_location.
+    Vague values ("Remote", "Worldwide", "") are passed through — Claude handles them."""
+    loc = (offer.get("localisation") or "").lower().strip()
+    vague = {"", "remote", "worldwide", "anywhere", "global", "international"}
+    if loc in vague or any(k in loc for k in REMOTE_KEYWORDS):
+        return True
+
+    targets = [c.lower() for c in CONFIG["mandatory"]["company_location"]]
+
+    # Location matches a target country → keep
+    for country in targets:
+        if any(alias in loc for alias in COUNTRY_ALIASES.get(country, [country])):
+            return True
+
+    # Location explicitly names a known non-target country → reject
+    for country, aliases in COUNTRY_ALIASES.items():
+        if country in targets:
+            continue
+        if any(alias in loc for alias in aliases):
+            return False
+
+    return True  # unknown location → let Claude decide
 
 
 def apply_filters(offers: list) -> list:
-    return [
-        o for o in offers
-        if o.get("url") and matches_poste(o) and matches_geo(o) and avoids_secteur(o)
-    ]
+    rss_source_names = {s["name"] for s in SOURCES}
+    result = []
+    for o in offers:
+        if not o.get("url"):
+            continue
+        
+        title_lower = (o.get("titre") or "").lower()
+        
+        # 1. Strict Title Exclusion — list managed in CONFIG["settings"]["titres_exclus"]
+        if any(exc in title_lower for exc in CONFIG["settings"]["titres_exclus"]):
+            continue
+            
+        # 2. Strict Role Inclusion (must have at least one keyword)
+        # Derived from CONFIG — no manual update needed when postes/aliases change
+        if not any(kw in title_lower for kw in get_role_keywords(CONFIG)):
+            continue
+            
+        # 3. Sector Exclusion
+        if not avoids_secteur(o):
+            continue
+            
+        # 4. Location Filter (RSS only)
+        if o.get("source") in rss_source_names and not rss_location_ok(o):
+            continue
+            
+        result.append(o)
+    return result
 
 # ── Scoring LLM ──────────────────────────────────────────────────────────────
 
 def build_prompt(offer: dict) -> str:
-    return f"""Tu es un expert en recrutement. Évalue cette offre pour ce profil de Product Manager.
+    m = CONFIG["mandatory"]
+    w = CONFIG["wished"]
+    return f"""You are an expert recruiter. Evaluate the job offer below against a candidate's search criteria and return a JSON score.
 
-PROFIL RECHERCHÉ :
-- Postes : Product Manager, Data Product Manager
-- Contrat : CDI uniquement
-- Salaire minimum : 45 000€/an
-- Localisation : full remote (partout dans le monde) OU Donostia/San Sebastián OU Pays Basque français (Bayonne, Biarritz, Anglet...)
-- Expérience : 3 à 5 ans en Product Management
-- Stack appréciée : {', '.join(CONFIG['stack'])}
-- Mots-clés d'intérêt : {', '.join(CONFIG['keywords'])}
-- Langues : français, anglais, espagnol
+## Mandatory criteria — if ANY fails, score must be ≤ 2
 
-GRILLE DE NOTATION (sois précis, utilise toute l'échelle) :
+- **Roles**: {', '.join(m['postes'])}
+  Apply semantic matching: equivalent or specialised titles count as valid (e.g. "Data Product Manager", "Technical PM" for "Product Manager"; "Chief Operating Officer", "Director of Operations" for "COO" — these are examples, not an exhaustive list).
+  Apply multilingual matching: map equivalent titles across languages (e.g. "Responsable Produit", "Chef de Produit" for "Product Manager"; "Directeur des Opérations", "Responsable Operativo" for "Operational Director" — these are examples, not an exhaustive list).
+- **Contract**: {', '.join(m['contrats'])} only — reject fixed-term, freelance, and internship contracts
+- **Full remote**: the position must allow working 100% remotely
+- **Company location**: the company must be based in {' or '.join(m['company_location'])}; if the company's country is unclear but the offer comes from a job board operating in one of these countries, assume it qualifies
+- **Minimum salary**: €{m['salaire_min']:,}/year — if salary is explicitly mentioned and below this, deduct 2 points
+- **Excluded sectors**: {', '.join(m['secteurs_nok'])} — any match → score ≤ 2 automatically
 
-10/10 — Offre idéale : TOUS ces critères réunis :
-  ✓ Secteur à impact positif (social, environnement, ESS, ONG, philanthropie, éducation, santé publique, civic tech)
-  ✓ Full remote ou localisation Donostia / Pays Basque
-  ✓ Salaire ≥ 45 000€ mentionné
-  ✓ Expérience 3-5 ans requise
-  ✓ Titre = Product Manager ou Data Product Manager
-  ✓ Au moins un mot-clé de la stack présent (n8n, automation, LLM, AI agents, no-code...)
+## Wished criteria — each one increases the score
 
-8-9/10 — Très bonne offre : Impact positif + remote/Donosti + PM confirmé, mais 1-2 manques mineurs (salaire non précisé, stack peu alignée, expérience légèrement hors range).
+- **Preferred sectors** (strong bonus): {', '.join(w['secteurs_ok'])}
+- **Tech stack** (bonus): {', '.join(w['stack'])}
+- **Keywords of interest** (bonus): {', '.join(w['keywords'])}
 
-6-7/10 — Bonne opportunité : Remote/Donosti + PM + secteur tech/SaaS correct, mais impact sociétal faible ou salaire incertain ou stack éloignée.
+## Scoring scale
 
-5/10 — Acceptable : Localisation ok + titre PM, mais secteur neutre, peu d'alignement stack, critères secondaires faibles.
+| Score | Meaning |
+|-------|---------|
+| 10    | All mandatory met + 3 or more wished criteria present |
+| 8–9   | All mandatory met + 2 wished criteria |
+| 7     | All mandatory met + 1 wished criterion |
+| 5–6   | All mandatory met, no wished criteria matched |
+| 3–4   | 1 mandatory criterion missing or unclear |
+| 1–2   | Multiple mandatory missing, excluded sector, or clearly wrong role/seniority |
 
-1-4/10 — Mauvaise adéquation : Localisation contraignante non remote, secteur à éviter, titre éloigné de PM, profil très senior (VP, Director) ou très junior (Associate, intern), ou CDD/freelance.
+Additional rules:
+- Titles clearly too senior (e.g. VP, CPO, CHRO, C-suite other than COO) or too junior (e.g. Junior, Associate, Intern) → score ≤ 4
+- Analyze the offer in whatever language it is written (EN/FR/ES) and map its content to the English criteria above
 
-RÈGLES IMPORTANTES :
-- "Crypto", "gambling", "casino", "défense", "armement" → score ≤ 2 obligatoirement
-- "Director of Product", "VP Product", "CPO" → score ≤ 5 (trop senior)
-- "Junior PM", "Associate PM", "Intern" → score ≤ 4 (trop junior)
-- Si le salaire est clairement < 45k€ → pénalise de 2 points
+## Offer to evaluate
 
-OFFRE À ÉVALUER :
-Titre : {offer['titre']}
-Entreprise : {offer['entreprise']}
-Source : {offer['source']}
-Localisation : {offer['localisation']}
-Salaire : {offer['salaire'] or 'non précisé'}
-Description : {offer['description'][:2000]}
+Title: {offer['titre']}
+Company: {offer['entreprise']}
+Source: {offer['source']}
+Location: {offer['localisation']}
+Salary: {offer['salaire'] or 'not specified'}
+Description: {offer['description'][:2000]}
 
-Réponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant ou après :
-{{"score": <entier 1-10>, "raison": "<2 phrases max en français, justifie le score avec les points forts et faiblesses>", "tags_detectes": {{"remote": <bool>, "impact": <bool>, "salaire_ok": <bool>, "experience_ok": <bool>, "stack_match": [<liste des mots-clés matchés>]}}}}"""
+Respond ONLY with valid JSON, no markdown, no text before or after:
+{{"score": <integer 1-10>, "raison": "<2 sentences max in French, justify the score with key strengths and weaknesses>", "tags_detectes": {{"remote": <bool>, "impact": <bool>, "salaire_ok": <bool>, "experience_ok": <bool>, "stack_match": [<list of matched keywords>]}}}}"""
 
 
 def score_offers(offers: list) -> list:
@@ -402,21 +475,29 @@ def score_offers(offers: list) -> list:
         print(f"  Scoring {i+1}/{len(offers)}: {offer['titre'][:55]}")
         try:
             response = client.messages.create(
-                model="claude-sonnet-4-6",
+                model="claude-haiku-4-5-20251001",
                 max_tokens=300,
                 messages=[{"role": "user", "content": build_prompt(offer)}],
             )
             raw = response.content[0].text.strip()
+            # Clean possible markdown block if Claude ignores instructions
+            if raw.startswith("```json"):
+                raw = raw.split("```json")[1].split("```")[0].strip()
+            elif raw.startswith("```"):
+                raw = raw.split("```")[1].split("```")[0].strip()
+
             parsed = json.loads(raw)
             offer["score"] = int(parsed.get("score", 0))
             offer["raison"] = parsed.get("raison", "")
             offer["tags_detectes"] = parsed.get("tags_detectes", {})
+            scored.append(offer)
         except Exception as e:
-            print(f"    ⚠ Score error: {e}")
-            offer["score"] = None
-            offer["raison"] = "Score unavailable"
+            print(f"    ⚠ Score error for '{offer['titre'][:30]}': {e}")
+            offer["score"] = 0
+            offer["raison"] = f"Error during scoring: {e}"
             offer["tags_detectes"] = {}
-        scored.append(offer)
+            scored.append(offer)
+        
         if i < len(offers) - 1:
             time.sleep(0.3)
     return scored
@@ -440,14 +521,16 @@ def extract_tags(offer: dict) -> str:
     desc = offer.get("description", "").lower()
     titre = offer.get("titre", "").lower()
 
-    # Location
-    is_local = any(g in loc for g in GEO_LOCAL)
+    # Location — labels come from CONFIG["settings"]["geo_local"] keys
+    geo_local = CONFIG["settings"]["geo_local"]
+    matched_geo = next(
+        (label for label, keywords in geo_local.items() if any(k in loc for k in keywords)),
+        None,
+    )
     is_remote = td.get("remote") or any(k in loc for k in REMOTE_KEYWORDS)
 
-    if any(g in loc for g in ["donostia", "san sebasti"]):
-        tags.append(("📍", "Donostia", "#7c3aed", "#f3e8ff"))
-    elif any(g in loc for g in ["bayonne", "biarritz", "anglet", "hendaye", "bidart"]):
-        tags.append(("📍", "Pays Basque FR", "#7c3aed", "#f3e8ff"))
+    if matched_geo:
+        tags.append(("📍", matched_geo, "#7c3aed", "#f3e8ff"))
     elif is_remote:
         tags.append(("🌍", "Full Remote", "#0369a1", "#e0f2fe"))
 
@@ -478,7 +561,7 @@ def extract_tags(offer: dict) -> str:
 
     # Keywords from CONFIG matched in offer text
     text = f"{offer.get('titre', '')} {desc}"
-    matched_keywords = [kw for kw in CONFIG["keywords"] if kw.lower() in text]
+    matched_keywords = [kw for kw in CONFIG["wished"]["keywords"] if kw.lower() in text]
     for kw in matched_keywords[:3]:
         if kw not in [t[1].lower() for t in tags]:
             tags.append(("🔑", kw, "#6d28d9", "#ede9fe"))
@@ -543,7 +626,7 @@ def build_email(offers: list, failed_sources: list) -> str:
   <div style="background:white;border-radius:12px;padding:24px;margin-bottom:16px;border:1px solid #e2e8f0;">
     <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;">🎯 Job Digest</h1>
     <p style="color:#64748b;font-size:13px;margin:0 0 4px;">{date_str}</p>
-    <p style="color:#64748b;font-size:13px;margin:0;">{len(offers)} offre{"s" if len(offers) > 1 else ""} sélectionnée{"s" if len(offers) > 1 else ""} (score ≥ 5/10) · Sources : {sources_list}</p>
+    <p style="color:#64748b;font-size:13px;margin:0;">{len(offers)} offre{"s" if len(offers) > 1 else ""} sélectionnée{"s" if len(offers) > 1 else ""} (score ≥ {CONFIG["settings"]["score_min"]}/10) · Sources : {sources_list}</p>
   </div>
   {cards}
   {warning}
@@ -553,7 +636,7 @@ def build_email(offers: list, failed_sources: list) -> str:
 
 def build_fallback_email(reason: str) -> str:
     date_str = datetime.now().strftime("%A %d %B %Y")
-    postes = ", ".join(CONFIG["postes"])
+    postes = ", ".join(CONFIG["mandatory"]["postes"])
     sources_list = ", ".join(s["name"] for s in SOURCES + build_apify_sources(CONFIG))
     return f"""<!DOCTYPE html>
 <html><body style="background:#f1f5f9;padding:24px;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -568,7 +651,7 @@ def build_fallback_email(reason: str) -> str:
     <div style="font-size:40px;margin-bottom:16px;">🔍</div>
     <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin:0 0 10px;">Nothing this week</h2>
     <p style="color:#64748b;font-size:14px;line-height:1.6;margin:0 0 6px;">
-      The agent scanned <strong style="color:#0f172a;">8 sources</strong> but no offer scored above <strong style="color:#0f172a;">5/10</strong> this week.
+      The agent scanned <strong style="color:#0f172a;">{len(SOURCES) + len(build_apify_sources(CONFIG))} sources</strong> but no offer scored above <strong style="color:#0f172a;">{CONFIG["settings"]["score_min"]}/10</strong> this week.
     </p>
     <p style="color:#94a3b8;font-size:13px;margin:0;">Back next Monday with a fresh scan.</p>
   </div>
@@ -582,7 +665,7 @@ def build_fallback_email(reason: str) -> str:
       </tr>
       <tr>
         <td style="padding:4px 0;font-size:13px;color:#64748b;">Min. score</td>
-        <td style="padding:4px 0;font-size:13px;color:#0f172a;font-weight:500;">{CONFIG["score_min"]}/10</td>
+        <td style="padding:4px 0;font-size:13px;color:#0f172a;font-weight:500;">{CONFIG["settings"]["score_min"]}/10</td>
       </tr>
       <tr>
         <td style="padding:4px 0;font-size:13px;color:#64748b;">Sources scanned</td>
@@ -644,7 +727,7 @@ def main() -> None:
     print(f"1. Collecting ({total_sources} sources)...")
     for source in SOURCES:
         print(f"   → {source['name']} (RSS)")
-        offers, error = fetch_source(source, CONFIG["max_age_days"])
+        offers, error = fetch_source(source, CONFIG["settings"]["max_age_days"])
         if error:
             failed_sources.append(source["name"])
             print(f"     ⚠ {error}")
@@ -654,7 +737,7 @@ def main() -> None:
 
     for source in apify_sources:
         print(f"   → {source['name']} (Apify)")
-        offers, error = fetch_apify_source(source, CONFIG["max_age_days"])
+        offers, error = fetch_apify_source(source, CONFIG["settings"]["max_age_days"])
         if error:
             failed_sources.append(source["name"])
             print(f"     ⚠ {error}")
@@ -693,8 +776,8 @@ def main() -> None:
     scored = score_offers(filtered)
 
     # 6. Filter below score_min
-    qualified = [o for o in scored if o["score"] is not None and o["score"] >= CONFIG["score_min"]]
-    print(f"   {len(qualified)} offers with score ≥ {CONFIG['score_min']}/10")
+    qualified = [o for o in scored if o["score"] is not None and o["score"] >= CONFIG["settings"]["score_min"]]
+    print(f"   {len(qualified)} offers with score ≥ {CONFIG['settings']['score_min']}/10")
 
     if not qualified:
         print("\n✗ No offers above threshold — sending fallback email.")
@@ -704,7 +787,7 @@ def main() -> None:
 
     # 7. Sort + top N
     qualified.sort(key=lambda o: -(o["score"] or 0))
-    top = qualified[: CONFIG["top_n"]]
+    top = qualified[: CONFIG["settings"]["top_n"]]
     print(f"\n4. Top {len(top)} offers selected")
     for o in top:
         print(f"   {o['score']}/10 — {o['titre'][:50]}")
